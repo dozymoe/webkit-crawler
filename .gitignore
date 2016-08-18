@@ -1,0 +1,15 @@
+## git
+
+*.orig
+
+
+## python
+
+*.pyc
+__pycache__/
+
+
+## vim
+
+*.swo
+*.swp
