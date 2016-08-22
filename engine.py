@@ -342,3 +342,15 @@ class Application(QApplication):
 
             self.exit(-1)
 
+
+    def info(self, message):
+        log_message(self._log, logging.INFO, message)
+
+    def debug(self, message):
+        log_message(self._log, logging.DEBUG, message)
+
+    def error(self, message):
+        log_message(self._log, logging.ERROR, message)
+
+    def warn(self, message):
+        log_message(self._log, logging.WARNING, message)
