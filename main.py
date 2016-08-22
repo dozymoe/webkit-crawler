@@ -16,4 +16,4 @@ if __name__ == '__main__' and len(sys.argv) > 1:
     else:
         exit(-1)
 
-app.start()
+exit(app.start())

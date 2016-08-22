@@ -117,12 +117,12 @@ class Proxy(QObject):
         log_message(self._log, logging.WARNING, message)
 
 
-    def __init__(self):
-        super().__init__()
-        self._expects = {}
-
-
 class WebPage(QWebPage):
+    """
+    QWebPage that prints Javascirpt errors to logger.
+
+    Adapted from http://www.tylerlesmann.com/2009/oct/01/web-scraping-pyqt4/
+    """
     _log = None
 
     def javaScriptConsoleMessage(self, message, lineNumber, sourceID):
@@ -171,7 +171,7 @@ class Application(QApplication):
         self._on_next_queue()
         if self._visible:
             self.show()
-        sys.exit(self.exec_())
+        return self.exec_()
 
 
     def _on_next_queue(self, app=None):
