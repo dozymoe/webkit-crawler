@@ -13,7 +13,7 @@ FORUM_BLOCKED_URL = FACEBOOK_URL + FORUM_BLOCKED_PATH
 
 def do_unban_confirm(app):
     js = """
-    bot.wait_page_reload = true;
+    bot.trigger_wait_page_load = true;
     document.querySelector('button[name="remove_block"]').click();
     """
     app.execjs(js)

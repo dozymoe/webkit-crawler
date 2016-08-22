@@ -71,16 +71,16 @@ class Proxy(QObject):
     active = pyqtProperty(bool, fget=_get_active)
 
 
-    _wait_page_reload = False
+    _trigger_wait_page_load = False
 
-    def _get_wait_page_reload(self):
-        return self._wait_page_reload
+    def _get_trigger_wait_page_load(self):
+        return self._trigger_wait_page_load
 
-    def _set_wait_page_reload(self, value):
-        self._wait_page_reload = value
+    def _set_trigger_wait_page_load(self, value):
+        self._trigger_wait_page_load = value
 
-    wait_page_reload = pyqtProperty(bool, fget=_get_wait_page_reload,
-            fset=_set_wait_page_reload)
+    trigger_wait_page_load = pyqtProperty(bool,
+            fget=_get_trigger_wait_page_load, fset=_set_trigger_wait_page_load)
 
 
     def _get_expects(self):
@@ -187,7 +187,7 @@ class Application(QApplication):
 
         self.proxy.set_expects(task['expects']);
 
-        self.proxy.wait_page_reload = True
+        self.proxy._trigger_wait_page_load = True
         self.web_page.currentFrame().load(QUrl(task['goto']))
 
 
@@ -208,7 +208,7 @@ class Application(QApplication):
     def _on_pageload_finished(self, successful):
         log_message(self._log, logging.DEBUG, 'DOM content loaded')
 
-        self.proxy.wait_page_reload = False
+        self.proxy._trigger_wait_page_load = False
         self.frame = self.web_page.currentFrame()
         self.frame.addToJavaScriptWindowObject('bot', self.proxy)
         self.frame.evaluateJavaScript("""
@@ -261,7 +261,7 @@ class Application(QApplication):
                 }
 
                 setInterval(function() {
-                    if (!bot.active || bot.wait_page_reload) return;
+                    if (!bot.active || bot.trigger_wait_page_load) return;
 
                     for (var ii = 0; ii < bot.expects.length; ii++) {
                         process_expectation(bot.expects[ii]);
@@ -322,4 +322,5 @@ class Application(QApplication):
         else:
             log_message(self._log, logging.ERROR,
                     'no handler for trigger %s' % trigger_name)
+
             self.exit(-1)

@@ -5,7 +5,7 @@ def do_login(app, username, password):
     document.forms.login_form.querySelector('[name="email"]').value = '{username}';
     document.forms.login_form.querySelector('[name="pass"]').value = '{password}';
 
-    bot.wait_page_reload = true;
+    bot.trigger_wait_page_load = true;
     document.forms.login_form.querySelector('input[type="submit"]').click();
     """
     app.execjs(js.format(username=username, password=password))
