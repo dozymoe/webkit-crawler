@@ -53,6 +53,7 @@ class Proxy(QObject):
 
 
     onTrigger = pyqtSignal(str, 'QVariantMap')
+    onCallHandler = pyqtSignal(str, 'QVariantMap')
 
     @pyqtSlot(str, 'QVariantMap')
     def trigger(self, trigger_name, trigger_args):
@@ -98,6 +99,11 @@ class Proxy(QObject):
     @pyqtSlot('QVariantMap')
     def add_queue(self, task):
         self.onQueue.emit(task)
+
+
+    @pyqtSlot(str, 'QVariantMap')
+    def call(self, handler_name, handler_args):
+        self.onCallHandler.emit(handler_name, handler_args)
 
 
     @pyqtSlot(str)
@@ -161,6 +167,7 @@ class Application(QApplication):
         self.proxy._log = logger
         self.proxy.onAddQueue.connect(self.add_queue)
         self.proxy.onTrigger.connect(self._on_trigger)
+        self.proxy.onCallHandler.connect(self._on_call_handler)
 
         self._queue = Queue()
 
@@ -324,3 +331,14 @@ class Application(QApplication):
                     'no handler for trigger %s' % trigger_name)
 
             self.exit(-1)
+
+
+    def _on_call_handler(self, handler_name, handler_args):
+        if handler_name in self._handlers:
+            self._handlers[handler_name](self, **handler_args)
+        else:
+            log_message(self._log, logging.ERROR,
+                    'no handler for call %s' % handler_name)
+
+            self.exit(-1)
+
