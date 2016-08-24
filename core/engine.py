@@ -2,10 +2,7 @@ from logging import DEBUG, ERROR, INFO, WARNING
 from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import QUrl, QObject, pyqtSignal, pyqtSlot, pyqtProperty, QTimer
 from PyQt4.QtWebKit import QWebPage, QWebView
-try:
-    from queue import Empty, Queue
-except ImportError:
-    from Queue import Empty, Queue
+from queue import Empty, Queue
 
 from core.helpers import log_message, make_list
 

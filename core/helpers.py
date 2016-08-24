@@ -1,6 +1,5 @@
 import os
 import sys
-from builtins import input # python2/3 compatible `input()`
 from collections import Mapping
 from getpass import getpass
 
