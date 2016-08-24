@@ -1,51 +1,13 @@
-import logging
-import sys
+from logging import DEBUG, ERROR, INFO, WARNING
 from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import QUrl, QObject, pyqtSignal, pyqtSlot, pyqtProperty, QTimer
 from PyQt4.QtWebKit import QWebPage, QWebView
-from queue import Empty, Queue
+try:
+    from queue import Empty, Queue
+except ImportError:
+    from Queue import Empty, Queue
 
-def log_message(logger, level, message):
-    if logger:
-        logger.log(level, message)
-    elif level in (logging.ERROR, logging.FATAL, logging.WARNING):
-        sys.stderr.write(message)
-        sys.stderr.write('\n')
-    else:
-        sys.stdout.write(message)
-        sys.stdout.write('\n')
-
-
-def is_non_string_iterable(data):
-    # http://stackoverflow.com/a/17222092
-    try:
-        if isinstance(data, unicode) or isinstance(data, str):
-            return False
-    except NameError:
-        pass
-    if isinstance(data, bytes):
-        return False
-    try:
-        iter(data)
-    except TypeError:
-        return False
-    try:
-        hasattr(None, data)
-    except TypeError:
-        return True
-    return False
-
-
-def make_list(items, nodict=False):
-    if items is None:
-        return []
-    elif not is_non_string_iterable(items):
-        return [items]
-    elif nodict and isinstance(items, dict):
-        return [items]
-    else:
-        return items
-
+from core.helpers import log_message, make_list
 
 class Proxy(QObject):
     _log = None
@@ -108,19 +70,19 @@ class Proxy(QObject):
 
     @pyqtSlot(str)
     def info(self, message):
-        log_message(self._log, logging.INFO, message)
+        log_message(self._log, INFO, message)
 
     @pyqtSlot(str)
     def debug(self, message):
-        log_message(self._log, logging.DEBUG, message)
+        log_message(self._log, DEBUG, message)
 
     @pyqtSlot(str)
     def error(self, message):
-        log_message(self._log, logging.ERROR, message)
+        log_message(self._log, ERROR, message)
 
     @pyqtSlot(str)
     def warn(self, message):
-        log_message(self._log, logging.WARNING, message)
+        log_message(self._log, WARNING, message)
 
 
 class WebPage(QWebPage):
@@ -132,7 +94,7 @@ class WebPage(QWebPage):
     _log = None
 
     def javaScriptConsoleMessage(self, message, lineNumber, sourceID):
-        log_message(self._log, logging.WARNING, 'Javascript:%s:%s: %s' % (
+        log_message(self._log, WARNING, 'Javascript:%s:%s: %s' % (
                 sourceID, lineNumber, message))
 
 
@@ -150,6 +112,7 @@ class Application(QApplication):
         self._log = logger
         self._visible = show
 
+        self.settings = {}
         self.web_page = WebPage()
         self.web_page._log = logger
 
@@ -188,7 +151,7 @@ class Application(QApplication):
         try:
             self._active_task = task = self._queue.get(timeout=15)
         except Empty:
-            log_message(self._log, logging.INFO, 'No more task in queue')
+            log_message(self._log, INFO, 'No more task in queue')
             self.exit(0)
             return
 
@@ -207,13 +170,13 @@ class Application(QApplication):
 
 
     def _on_timeout(self):
-        log_message(self._log, logging.DEBUG, 'Expects timeout')
+        log_message(self._log, DEBUG, 'Expects timeout')
         self.set_expects(self._timeout_expects or [])
         self.web_page.triggerAction(QWebPage.Stop)
 
 
     def _on_pageload_finished(self, successful):
-        log_message(self._log, logging.DEBUG, 'DOM content loaded')
+        log_message(self._log, DEBUG, 'DOM content loaded')
 
         self.proxy._trigger_wait_page_load = False
         self.frame = self.web_page.currentFrame()
@@ -267,7 +230,7 @@ class Application(QApplication):
                     bot.trigger(expect.trigger, expect.triggerArgs || {});
                 }
 
-                setInterval(function() {
+                window.setInterval(function() {
                     if (!bot.active || bot.trigger_wait_page_load) return;
 
                     for (var ii = 0; ii < bot.expects.length; ii++) {
@@ -300,7 +263,7 @@ class Application(QApplication):
                 if not key in ('path', 'hash', 'selectorExists',
                         'selectorNotExists', 'trigger', 'triggerArgs'):
 
-                    log_message(self._log, logging.WARNING,
+                    log_message(self._log, WARNING,
                             '%s is not a valid expect field' % key)
 
             item['selectorExists'] = make_list(item.get('selectorExists'))
@@ -327,7 +290,7 @@ class Application(QApplication):
         if trigger_name in self._handlers:
             self._handlers[trigger_name](self, **trigger_args)
         else:
-            log_message(self._log, logging.ERROR,
+            log_message(self._log, ERROR,
                     'no handler for trigger %s' % trigger_name)
 
             self.exit(-1)
@@ -337,20 +300,20 @@ class Application(QApplication):
         if handler_name in self._handlers:
             self._handlers[handler_name](self, **handler_args)
         else:
-            log_message(self._log, logging.ERROR,
+            log_message(self._log, ERROR,
                     'no handler for call %s' % handler_name)
 
             self.exit(-1)
 
 
     def info(self, message):
-        log_message(self._log, logging.INFO, message)
+        log_message(self._log, INFO, message)
 
     def debug(self, message):
-        log_message(self._log, logging.DEBUG, message)
+        log_message(self._log, DEBUG, message)
 
     def error(self, message):
-        log_message(self._log, logging.ERROR, message)
+        log_message(self._log, ERROR, message)
 
     def warn(self, message):
-        log_message(self._log, logging.WARNING, message)
+        log_message(self._log, WARNING, message)

@@ -2,16 +2,32 @@
 
 import os
 
-from modules.facebook import register_handlers as facebook_handlers
+from core.helpers import flatten_settings, get_settings_value
 
-FORUM_NAME = os.environ['FACEBOOK_FORUM']
+from modules.facebook import get_handlers as facebook_handlers
+from modules.facebook import get_settings_definition as facebook_settings
 
-FACEBOOK_URL = 'https://www.facebook.com'
-FORUM_BLOCKED_PATH = '/groups/' + FORUM_NAME + '/blocked/'
-FORUM_BLOCKED_URL = FACEBOOK_URL + FORUM_BLOCKED_PATH
+ACTIVE_SETTINGS = (
+    'facebook.home',
+    'facebook.username',
+    'facebook.password',
+    'facebook.forum.name',
+)
+
+def _get_urls(app):
+    fb_forum = app.settings['facebook.forum.name']
+    fb_home_url = app.settings['facebook.home']
+
+    urls = {
+        'FORUM_BLOCKED_PATH': '/groups/' + fb_forum + '/blocked/',
+        'FORUM_BLOCKED_URL': fb_home_url +'/groups/' + fb_forum + '/blocked/',
+    }
+    return urls
 
 
 def do_unban_confirm(app):
+    urls = _get_urls(app)
+
     js = """
     bot.trigger_wait_page_load = true;
     document.querySelector('button[name="remove_block"]').click();
@@ -20,7 +36,7 @@ def do_unban_confirm(app):
 
     app.set_expects([
         {
-            'path': FORUM_BLOCKED_PATH + '?',
+            'path': urls['FORUM_BLOCKED_PATH'] + '?', # regex
             'selectorExists': '#pagelet_group_blocked div[id^="member_"] .adminActions > a[ajaxify*="action=remove_block"]',
             'selectorNotExists': 'button[name="remove_block"]',
             'trigger': 'ufbm.doUnban',
@@ -28,6 +44,8 @@ def do_unban_confirm(app):
 
 
 def do_unban(app):
+    urls = _get_urls(app)
+
     js = """
     var el = document.querySelector('#pagelet_group_blocked div[id^="member_"] .adminActions > a[ajaxify*="action=remove_block"]');
     bothelp_clickElement(el);
@@ -38,46 +56,61 @@ def do_unban(app):
 
     app.set_expects([
         {
-            'path': FORUM_BLOCKED_PATH + '?',
+            'path': urls['FORUM_BLOCKED_PATH'] + '?', # regex
             'selectorExists': 'button[name="remove_block"]',
             'trigger': 'ufbm.doUnbanConfirm',
         }])
 
 
 def unban(app):
+    urls = _get_urls(app)
+
     app.clear_handlers()
 
     app.add_handler('ufbm.doUnban', do_unban)
 
     app.set_expects([
         {
-            'path': FORUM_BLOCKED_PATH + '?',
+            'path': urls['FORUM_BLOCKED_PATH'] + '?', # regex
             'selectorExists': '#pagelet_group_blocked div[id^="member_"] .adminActions > a[ajaxify*="action=remove_block"]',
             'trigger': 'ufbm.doUnban',
         }])
 
 
+def collect_settings(settings_in_file=None):
+    primary_settings = dict(flatten_settings(settings_in_file or {}))
+
+    for name, config in facebook_settings():
+        if not name in ACTIVE_SETTINGS:
+            continue
+        yield name, get_settings_value(name, config, primary_settings)
+
+
 def unban_facebook_blocked_members(app):
-    facebook_handlers(app)
+    urls = _get_urls(app)
+
+    for name, callback in facebook_handlers():
+        app.add_handler(name, callback)
+
     app.add_handler('ufbm.unban', unban);
 
     app.add_queue(
         {
-            'goto': FACEBOOK_URL,
+            'goto': app.settings['facebook.home'],
             'expects': [
             {
                 'trigger': 'facebook.login',
                 'triggerArgs':
                 {
-                    'username': os.environ['FACEBOOK_USERNAME'],
-                    'password': os.environ['FACEBOOK_PASSWORD'],
+                    'username': app.settings['facebook.username'],
+                    'password': app.settings['facebook.password'],
                 }
             }],
         })
 
     app.add_queue(
         {
-            'goto': FORUM_BLOCKED_URL,
+            'goto': urls['FORUM_BLOCKED_URL'],
             'expects': [
             {
                 'trigger': 'ufbm.unban',

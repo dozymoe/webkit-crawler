@@ -1,0 +1,20 @@
+{
+    "facebook": {
+        "home": {
+            "prompt": "Facebook home url? ",
+            "default": "https://www.facebook.com"
+        },
+        "username": {
+            "prompt": "Facebook username (email)? "
+        },
+        "password": {
+            "prompt": "Facebook password? ",
+            "masked": true
+        },
+        "forum": {
+            "name": {
+                "prompt": "Facebook forum name (eg. angularjs_id)? "
+            }
+        }
+    }
+}
