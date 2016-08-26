@@ -1,7 +1,53 @@
 import os
 import sys
+from ast import literal_eval
 from collections import Mapping
 from getpass import getpass
+from re import compile
+
+
+def evaluate_conditional(expr_list, context):
+    re_replacement = compile(r'({([\w.]+)})')
+    re_split = compile(r'\s')
+
+    for expr in make_list(expr_list):
+        try:
+            match = re_replacement.search(expr)
+            while match:
+                expr = expr.replace(match.group(1), context[match.group(2)])
+                match = re_replacement.search(expr)
+        except KeyError:
+            break
+
+        try:
+            var1, comp, var2 = [x for x in re_split.split(expr) if x]
+
+            var1 = literal_eval(var1)
+            var2 = literal_eval(var2)
+
+            if not comp in ('<', '<=', '>', '>=', '==', '!='):
+                raise ValueError()
+
+            if comp == '<' and var1 >= var2:
+                break
+            elif comp == '<=' and var1 > var2:
+                break
+            elif comp == '>' and var1 <= var2:
+                break
+            elif comp == '>=' and var1 < var2:
+                break
+            elif comp == '==' and var1 != var2:
+                break
+            elif comp == '!=' and var1 == var2:
+                break
+
+        except ValueError:
+            sys.stderr.write('invalid conditional: %s\n' % expr)
+            break
+    else:
+        return True
+
+    return False
 
 
 def flatten_settings(data, prefix=None):
@@ -52,10 +98,19 @@ def get_settings_value(name, config, settings_in_file):
 
     if config.get('masked', False):
         fn_input = getpass
-    else:
+    elif sys.version_info[0] >= 3:
         fn_input = input
+    else:
+        fn_input = raw_input
 
     return fn_input(config['prompt'])
+
+
+def is_active_settings(setting, settings):
+    for active_setting in settings:
+        if setting.startswith(active_setting):
+            return True
+    return False
 
 
 def is_non_string_iterable(data):
@@ -76,17 +131,6 @@ def is_non_string_iterable(data):
     except TypeError:
         return True
     return False
-
-
-def log_message(logger, level, message):
-    if logger:
-        logger.log(level, message)
-    elif level in (logging.ERROR, logging.FATAL, logging.WARNING):
-        sys.stderr.write(message)
-        sys.stderr.write('\n')
-    else:
-        sys.stdout.write(message)
-        sys.stdout.write('\n')
 
 
 def make_list(items, nodict=False):

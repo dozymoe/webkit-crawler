@@ -1,0 +1,14 @@
+{
+    "application": {
+        "settings": {
+            "load_images": {
+                "prompt": "Let builtin browser download images? (0, 1) ",
+                "default": "0"
+            }
+        },
+        "visible": {
+            "prompt": "Show main window? (0, 1) ",
+            "default": "1"
+        }
+    }
+}

@@ -5,6 +5,8 @@
 
 ## python
 
+/.virtualenv/
+/python_modules
 *.pyc
 __pycache__/
 

@@ -1,13 +1,19 @@
 """ Unban Facebook Blocked Members """
 
 import os
+from itertools import chain
 
-from core.helpers import flatten_settings, get_settings_value
+from core.application import get_settings_definition as application_settings
+from core.reporter import get_settings_definition as reporter_settings
+from core.helpers import evaluate_conditional, flatten_settings
+from core.helpers import get_settings_value, is_active_settings
 
 from modules.facebook import get_handlers as facebook_handlers
 from modules.facebook import get_settings_definition as facebook_settings
 
 ACTIVE_SETTINGS = (
+    'application.',
+    'reporter.',
     'facebook.home',
     'facebook.username',
     'facebook.password',
@@ -77,15 +83,6 @@ def unban(app):
         }])
 
 
-def collect_settings(settings_in_file=None):
-    primary_settings = dict(flatten_settings(settings_in_file or {}))
-
-    for name, config in facebook_settings():
-        if not name in ACTIVE_SETTINGS:
-            continue
-        yield name, get_settings_value(name, config, primary_settings)
-
-
 def unban_facebook_blocked_members(app):
     urls = _get_urls(app)
 
@@ -116,3 +113,22 @@ def unban_facebook_blocked_members(app):
                 'trigger': 'ufbm.unban',
             }],
         })
+
+
+def collect_settings(result, settings_in_file=None):
+    primary_settings = dict(flatten_settings(settings_in_file or {}))
+
+    all_settings = chain(facebook_settings(), application_settings(),
+            reporter_settings())
+
+    for name, config in all_settings:
+        if 'default' in config:
+            result[name] = config['default']
+
+        if not is_active_settings(name, ACTIVE_SETTINGS):
+            continue
+
+        if not evaluate_conditional(config.get('if'), result):
+            continue
+
+        result[name] = get_settings_value(name, config, primary_settings)

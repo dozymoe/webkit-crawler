@@ -7,9 +7,14 @@ inspired by `pexpect`, fulfillment of expectations will trigger chains of
 callbacks.
 
 
+## Installation
+
+Run `./configure.sh` which will create python virtualenv in `.virtualenv`
+directory.
+
+
 ## Requirements
 
-*  python3  
-   There was problem comparing QString with str in python2
-
 *  PyQt4
+*  python-virtualenv
+*  Xvfb

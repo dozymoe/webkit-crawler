@@ -1,0 +1,83 @@
+{
+    "reporter": {
+        "default": {
+            "log_level": {
+                "prompt": "Logging verbosity? (debug, info, warning, error) ",
+                "default": "info"
+            },
+            "type": {
+                "prompt": "Logging output? (console, syslog, file) ",
+                "default": "console"
+            },
+            "filename": {
+                "prompt": "Logging output filename: ",
+                "if": "'{reporter.default.type}' == 'file'"
+            },
+            "filesize": {
+                "prompt": "Logging maximum filesize? (bytes)",
+                "default": "1048576"
+            },
+            "filecount": {
+                "prompt": "Logging files kept? (eg. 3)",
+                "default": "3"
+            }
+        },
+        "email": {
+            "enabled": {
+                "prompt": "Enable email support? (0, 1) ",
+                "default": "0"
+            },
+            "log_level": {
+                "prompt": "Set email report verbosity to? (debug, info, warning, error) ",
+                "default": "info"
+            },
+            "log_level_send": {
+                "prompt": "Loging level that will trigger mail send? (debug, info, warning, error) ",
+                "default": "error"
+            },
+            "sender": {
+                "host": {
+                    "prompt": "Email server? (eg. gmail.com) ",
+                    "default": "localhost"
+                },
+                "port": {
+                    "prompt": "Email server port? (eg. 25) ",
+                    "default": "0"
+                },
+                "username": {
+                    "prompt": "Email account username? ",
+                    "if": [
+                        "{reporter.email.enabled} != 0",
+                        "'{reporter.email.sender.host}' != 'localhost'"
+                    ]
+                },
+                "password": {
+                    "prompt": "Email account password? ",
+                    "masked": true,
+                    "if": [
+                        "{reporter.email.enabled} != 0",
+                        "'{reporter.email.sender.host}' != 'localhost'"
+                    ]
+                },
+                "use_tls": {
+                    "prompt": "Email server use TLS? (0, 1)",
+                    "default": "0"
+                }
+            },
+            "content": {
+                "subject": {
+                    "prompt": "Email notification `Subject` field: ",
+                    "if": "{reporter.email.enabled} != 0"
+                },
+                "from": {
+                    "prompt": "Email notification `From` field: ",
+                    "if": "{reporter.email.enabled} != 0"
+                },
+                "to": {
+                    "prompt": "Email notification `To` field: ",
+                    "if": "{reporter.email.enabled} != 0"
+                }
+            }
+        }
+    }
+}
