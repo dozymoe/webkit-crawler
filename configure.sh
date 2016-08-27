@@ -14,7 +14,7 @@ fatal() {
   exit 1
 }
 
-[[ ! -x /usr/bin/python${PYTHON_VERSION} ]] && fatal "Please install python${PYTHON_VERSION} or use ./configure VERSION"
+[[ ! -x /usr/bin/python${PYTHON_VERSION} ]] && fatal "Please install python${PYTHON_VERSION} or use ./configure.sh PYTHON_VERSION"
 [[ ! -x /usr/bin/Xvfb ]] && fatal 'Please install xvfb (ubuntu) or xorg-x11-server-Xvfb (centos)'
 
 # setup python modules
