@@ -75,4 +75,5 @@ then
 fi
 
 pip install --upgrade pyvirtualdisplay
-#pip install -r requirements.txt || fatal  'Cannot install python modules'
+
+echo 'Done.'

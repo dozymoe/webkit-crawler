@@ -78,6 +78,81 @@
                     "if": "{reporter.email.enabled} != 0"
                 }
             }
+        },
+        "javascript": {
+            "log_level": {
+                "prompt": "Logging verbosity? (debug, info, warning, error) ",
+                "default": "debug"
+            },
+            "type": {
+                "prompt": "Logging output? (console, syslog, file) ",
+                "default": "file"
+            },
+            "filename": {
+                "prompt": "Logging output filename: ",
+                "if": "'{reporter.javascript.type}' == 'file'",
+                "default": "javascript.log"
+            },
+            "filesize": {
+                "prompt": "Logging maximum filesize? (bytes)",
+                "if": "'{reporter.javascript.type}' == 'file'",
+                "default": "1048576"
+            },
+            "filecount": {
+                "prompt": "Logging files kept? (eg. 3)",
+                "if": "'{reporter.javascript.type}' == 'file'",
+                "default": "3"
+            }
+        },
+        "http": {
+            "log_level": {
+                "prompt": "Logging verbosity? (debug, info, warning, error) ",
+                "default": "debug"
+            },
+            "type": {
+                "prompt": "Logging output? (console, syslog, file) ",
+                "default": "file"
+            },
+            "filename": {
+                "prompt": "Logging output filename: ",
+                "if": "'{reporter.http.type}' == 'file'",
+                "default": "http.log"
+            },
+            "filesize": {
+                "prompt": "Logging maximum filesize? (bytes)",
+                "if": "'{reporter.http.type}' == 'file'",
+                "default": "1048576"
+            },
+            "filecount": {
+                "prompt": "Logging files kept? (eg. 3)",
+                "if": "'{reporter.http.type}' == 'file'",
+                "default": "3"
+            }
+        },
+        "qt": {
+            "log_level": {
+                "prompt": "Logging verbosity? (debug, info, warning, error) ",
+                "default": "debug"
+            },
+            "type": {
+                "prompt": "Logging output? (console, syslog, file) ",
+                "default": "file"
+            },
+            "filename": {
+                "prompt": "Logging output filename: ",
+                "if": "'{reporter.qt.type}' == 'file'",
+                "default": "qt.log"
+            },
+            "filesize": {
+                "prompt": "Logging maximum filesize? (bytes)",
+                "if": "'{reporter.qt.type}' == 'file'",
+                "default": "1048576"
+            },
+            "filecount": {
+                "prompt": "Logging files kept? (eg. 3)",
+                "if": "'{reporter.qt.type}' == 'file'",
+                "default": "3"
+            }
         }
     }
 }

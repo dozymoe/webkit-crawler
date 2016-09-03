@@ -31,7 +31,7 @@ Example cron script:
         export REPORTER_EMAIL_CONTENT_FROM=
         export REPORTER_EMAIL_CONTENT_TO=
                                            
-        cd /usr/src/local/tokopedia-bukalapak
+        cd /usr/src/local/facebook-unban
         source .virtualenv/bin/activate
         python main.py ufbm
     )
@@ -41,4 +41,4 @@ Example cron script:
 
 *  PyQt4
 *  python-virtualenv
-*  Xvfb
+*  Xvfb (linux server)

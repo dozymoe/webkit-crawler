@@ -4,6 +4,14 @@
             "load_images": {
                 "prompt": "Let builtin browser download images? (0, 1) ",
                 "default": "0"
+            },
+            "java_enabled": {
+                "prompt": "Allow dangerous java applets? (0, 1) ",
+                "default": "0"
+            },
+            "plugins_enabled": {
+                "prompt": "Enable pluggins? (0, 1) ",
+                "default": "0"
             }
         },
         "visible": {

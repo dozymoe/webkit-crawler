@@ -64,22 +64,22 @@ class MailReporter(object):
         if int(self.settings['reporter.email.enabled']) == 0:
             return
 
-        thingy.onLog.connect(self._on_log)
+        thingy.log_event.connect(self._on_log)
 
         if hasattr(thingy, 'aboutToQuit'):
             thingy.aboutToQuit.connect(self._on_app_quit)
 
 
-    def _on_log(self, log_level, message):
+    def _on_log(self, log_level, message, group):
         if log_level >= self._log_level_send:
             self._send = True
         if log_level >= self._log_level:
-            self._logs.append((log_level, message))
+            self._logs.append((str(group), log_level, str(message)))
 
 
     def _generate_content(self):
-        for log_level, text in self._logs:
-            yield '%s: %s' % (log_level_to_str(log_level), text)
+        for group, log_level, text in self._logs:
+            yield '%s: %s: %s' % (log_level_to_str(log_level), group, text)
 
 
     def _on_app_quit(self):
@@ -108,42 +108,61 @@ class MailReporter(object):
 
 
 class Reporter(object):
-    _log = None
     _mailer = None
     settings = None
+    known_logs = ('default', 'http', 'javascript', 'qt')
 
     def __init__(self, name, settings):
         self.settings = settings
         self._mailer = MailReporter(settings)
 
-        self._log = getLogger(name)
-        self._log.setLevel(str_to_log_level(
-            settings['reporter.default.log_level']))
+        base_dir = os.path.dirname(os.path.dirname(
+                os.path.realpath(__file__)))
 
-        output_type = settings['reporter.default.type']
-        if output_type == 'syslog':
-            self._log.addHandler(SysLogHandler(address='/dev/log'))
+        log_dir = os.path.join(base_dir, 'logs')
 
-        elif output_type == 'file':
-            filename = settings['reporter.default.filename']
-            if not filename:
-                filename = '%s.log' % name
+        for logname in self.known_logs:
+            log = getLogger(logname)
+            log.setLevel(str_to_log_level(
+                settings['reporter.%s.log_level' % logname]))
 
-            filesize = int(settings['reporter.default.filesize'])
-            filecount = int(settings['reporter.default.filecount'])
-            if filecount > 0:
-                filecount -= 1
+            output_type = settings['reporter.%s.type' % logname]
+            if output_type == 'syslog':
+                log.addHandler(SysLogHandler(address='/dev/log'))
 
-            self._log.addHandler(RotatingFileHandler(filename,
-                    maxBytes=filesize, backupCount=filecount))
+            elif output_type == 'file':
+                filename = settings['reporter.%s.filename' % logname]
+                if not filename:
+                    filename = '%s-%s.log' % (name, logname)
+                elif os.path.dirname(filename) == '':
+                    filename = os.path.join(log_dir, '%s-%s' % (name,
+                            filename))
 
-        elif output_type == 'console':
-            self._log.addHandler(StreamHandler())
+                filesize = int(settings['reporter.%s.filesize' % logname])
+                filecount = int(settings['reporter.%s.filecount' % logname])
+                if filecount > 0:
+                    filecount -= 1
+
+                log.addHandler(RotatingFileHandler(filename,
+                        maxBytes=filesize, backupCount=filecount))
+
+            elif output_type == 'console':
+                log.addHandler(StreamHandler())
 
 
     def attach(self, thingy):
-        thingy.onLog.connect(self._log.log)
+        thingy.log_event.connect(self._on_log)
         self._mailer.attach(thingy)
+
+
+    def _on_log(self, log_level, message, group):
+        group = str(group)
+        if group in self.known_logs:
+            log = getLogger(group)
+            log.log(log_level, message)
+        else:
+            log = getLogger('default')
+            log.error('Unknown logger: %s.' % group)
 
 
 def get_settings_definition():

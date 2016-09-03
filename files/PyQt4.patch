@@ -1,0 +1,11 @@
+--- _qt/sipQtGuiQAbstractPrintDialog.cpp	2016-08-27 12:57:42.919462845 -0400
++++ _qt/sipQtGuiQAbstractPrintDialog.cpp.new	2016-08-27 13:00:40.980462731 -0400
+@@ -1770,7 +1770,7 @@
+     {sipName_None_, static_cast<int>(QAbstractPrintDialog::None), 17},
+     {sipName_PageRange, static_cast<int>(QAbstractPrintDialog::PageRange), 19},
+     {sipName_PrintCollateCopies, static_cast<int>(QAbstractPrintDialog::PrintCollateCopies), 17},
+-    {sipName_PrintCurrentPage, static_cast<int>(QAbstractPrintDialog::PrintCurrentPage), 17},
++    //{sipName_PrintCurrentPage, static_cast<int>(QAbstractPrintDialog::PrintCurrentPage), 17},
+     {sipName_PrintPageRange, static_cast<int>(QAbstractPrintDialog::PrintPageRange), 17},
+     {sipName_PrintSelection, static_cast<int>(QAbstractPrintDialog::PrintSelection), 17},
+     {sipName_PrintShowPageSize, static_cast<int>(QAbstractPrintDialog::PrintShowPageSize), 17},

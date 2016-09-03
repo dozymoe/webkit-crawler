@@ -3,7 +3,11 @@ import sys
 from ast import literal_eval
 from collections import Mapping
 from getpass import getpass
-from re import compile
+from re import compile, sub as subst
+try:
+    from urllib.parse import urlsplit, urlunsplit
+except ImportError:
+    from urlparse import urlsplit, urlunsplit
 
 
 def evaluate_conditional(expr_list, context):
@@ -133,7 +137,7 @@ def is_non_string_iterable(data):
     return False
 
 
-def make_list(items, nodict=False):
+def make_list(items, nodict=True):
     if items is None:
         return []
     elif not is_non_string_iterable(items):
@@ -142,3 +146,47 @@ def make_list(items, nodict=False):
         return [items]
     else:
         return items
+
+
+def traverse_dom_element(element, excludes=[]):
+    while child:
+        if not child.tagName() in excludes:
+            yield child
+        for c in traverse_dom_element(child, excludes):
+            yield c
+        child = child.nextSibling()
+
+
+def strip_tags(element):
+    result = []
+    for el in traverse_dom_element(element,
+            excludes=['button', 'script']):
+
+        result.append(el.toPlainText())
+
+        #result = ' '.join([e for e in soup.recursiveChildGenerator() \
+        #        if isinstance(e, unicode)])
+
+    return subst(r'[ \t]+', ' ', ' '.join(result)).strip()
+
+
+def url_join(*parts, **kwargs):
+    """
+    Normalize url parts and join them with a slash.
+    adapted from: http://codereview.stackexchange.com/q/13027
+    """
+    def concat_paths(sequence):
+        result = []
+        for path in sequence:
+            result.append(path)
+            if path.startswith('/'):
+                break
+        return '/'.join(reversed(result))
+
+    schemes, netlocs, paths, queries, fragments = zip(*(urlsplit(part) for part in reversed(parts)))
+    scheme = next((x for x in schemes if x), kwargs.get('scheme', 'http'))
+    netloc = next((x for x in netlocs if x), '')
+    path = concat_paths(paths)
+    query = queries[0]
+    fragment = fragments[0]
+    return urlunsplit((scheme, netloc, path, query, fragment))

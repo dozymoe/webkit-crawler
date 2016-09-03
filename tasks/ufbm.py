@@ -1,6 +1,5 @@
 """ Unban Facebook Blocked Members """
 
-import os
 from itertools import chain
 
 from core.application import get_settings_definition as application_settings
@@ -10,6 +9,7 @@ from core.helpers import get_settings_value, is_active_settings
 
 from modules.facebook import get_handlers as facebook_handlers
 from modules.facebook import get_settings_definition as facebook_settings
+from modules.facebook import check_page_not_found as facebook404
 
 ACTIVE_SETTINGS = (
     'application.',
@@ -31,55 +31,118 @@ def _get_urls(app):
     return urls
 
 
-def do_unban_confirm(app):
+def on_do_unban_timeout_trigger(app, frame):
+    app.debug('on_do_unban_timeout_trigger')
+
     urls = _get_urls(app)
 
-    js = """
-    bot.trigger_wait_page_load = true;
-    document.querySelector('button[name="remove_block"]').click();
-    """
-    app.execjs(js)
+    app.add_handler('ufbm.unban', on_unban_trigger)
+
+    app.set_expects(
+        [{
+            'host': r'^www\.facebook\.com$',
+            'path': r'^%s?$' % urls['FORUM_BLOCKED_PATH'],
+            'trigger': 'ufbm.unban',
+            'trigger_wait_pageload': True,
+        }])
+
+    app.load(urls['FORUM_BLOCKED_URL'])
+
+
+def on_do_empty_list_trigger(app, frame):
+    app.info('No users were banned.')
+    app.exit(0)
+
+
+def on_do_unban_confirm_trigger(app, frame):
+    urls = _get_urls(app)
+
+    document = frame.documentElement()
 
     app.set_expects([
         {
-            'path': urls['FORUM_BLOCKED_PATH'] + '?', # regex
-            'selectorExists': '#pagelet_group_blocked div[id^="member_"] .adminActions > a[ajaxify*="action=remove_block"]',
-            'selectorNotExists': 'button[name="remove_block"]',
-            'trigger': 'ufbm.doUnban',
+            'host': r'^www\.facebook\.com$',
+            'path': r'^%s?$' % urls['FORUM_BLOCKED_PATH'],
+            'selector_exists': '#pagelet_group_blocked div[id^="member_"] ' +\
+                    '.adminActions > a[ajaxify*="action=remove_block"]',
+
+            'selector_not_exists': 'button[name="remove_block"]',
+            'trigger': 'ufbm.do_unban',
+            'trigger_wait_pageload': True,
         }])
 
+    app.add_handler('ufbm.do_unban_timeout', on_do_unban_timeout_trigger)
+    app.set_timeout_expects(15, {'trigger': 'ufbm.do_unban_timeout'})
 
-def do_unban(app):
+    el_unblock = document.findFirst('button[name="remove_block"]')
+    if el_unblock.isNull():
+        app.error('Cannot find "remove block" confirm button, ' +\
+                'UI may have changed')
+
+        app.exit(-1)
+    else:
+        el_unblock.evaluateJavaScript('bot.click(this)')
+
+
+def on_do_unban_trigger(app, frame):
     urls = _get_urls(app)
 
-    js = """
-    var el = document.querySelector('#pagelet_group_blocked div[id^="member_"] .adminActions > a[ajaxify*="action=remove_block"]');
-    bothelp_clickElement(el);
-    """
-    app.execjs(js)
+    document = frame.documentElement()
 
-    app.add_handler('ufbm.doUnbanConfirm', do_unban_confirm)
+    app.add_handler('ufbm.do_unban_confirm', on_do_unban_confirm_trigger)
+    app.add_handler('ufbm.do_empty_list', on_do_empty_list_trigger)
 
     app.set_expects([
         {
-            'path': urls['FORUM_BLOCKED_PATH'] + '?', # regex
-            'selectorExists': 'button[name="remove_block"]',
-            'trigger': 'ufbm.doUnbanConfirm',
+            'host': r'^www\.facebook\.com$',
+            'path': r'^%s?$' % urls['FORUM_BLOCKED_PATH'],
+            'selector_exists': 'button[name="remove_block"]',
+            'trigger': 'ufbm.do_unban_confirm',
+            'trigger_delay': 5,
+        },
+        {
+            'host': r'^www\.facebook\.com$',
+            'path': r'^%s?$' % urls['FORUM_BLOCKED_PATH'],
+            'selector_exists': '.fbProfileBrowserNullstate.' +\
+                    'fbProfileBrowserListContainer',
+
+            'trigger': 'ufbm.do_empty_list',
         }])
 
+    app.add_handler('ufbm.do_unban_timeout', on_do_unban_timeout_trigger)
+    app.set_timeout_expects(30, {'trigger': 'ufbm.do_unban_timeout'})
 
-def unban(app):
+    el_unblock = document.findFirst('#pagelet_group_blocked ' +
+            'div[id^="member_"] .adminActions > ' +
+            'a[ajaxify*="action=remove_block"]')
+
+    el_unblock.evaluateJavaScript('bot.click(this)')
+
+
+def on_unban_trigger(app, frame):
     urls = _get_urls(app)
 
     app.clear_handlers()
 
-    app.add_handler('ufbm.doUnban', do_unban)
+    app.add_handler('ufbm.do_unban', on_do_unban_trigger)
+    app.add_handler('ufbm.do_empty_list', on_do_empty_list_trigger)
 
     app.set_expects([
         {
-            'path': urls['FORUM_BLOCKED_PATH'] + '?', # regex
-            'selectorExists': '#pagelet_group_blocked div[id^="member_"] .adminActions > a[ajaxify*="action=remove_block"]',
-            'trigger': 'ufbm.doUnban',
+            'host': r'^www\.facebook\.com$',
+            'path': r'^%s?$' % urls['FORUM_BLOCKED_PATH'],
+            'selector_exists': '#pagelet_group_blocked div[id^="member_"] ' +\
+                    '.adminActions > a[ajaxify*="action=remove_block"]',
+
+            'trigger': 'ufbm.do_unban',
+        },
+        {
+            'host': r'^www\.facebook\.com$',
+            'path': r'^%s?$' % urls['FORUM_BLOCKED_PATH'],
+            'selector_exists': '.fbProfileBrowserNullstate.' +\
+                    'fbProfileBrowserListContainer',
+
+            'trigger': 'ufbm.do_empty_list',
         }])
 
 
@@ -89,19 +152,16 @@ def unban_facebook_blocked_members(app):
     for name, callback in facebook_handlers():
         app.add_handler(name, callback)
 
-    app.add_handler('ufbm.unban', unban);
+    app.add_handler('ufbm.unban', on_unban_trigger)
 
     app.add_queue(
         {
             'goto': app.settings['facebook.home'],
             'expects': [
             {
+                'host': r'^www\.facebook\.com$',
+                'path': r'^/$',
                 'trigger': 'facebook.login',
-                'triggerArgs':
-                {
-                    'username': app.settings['facebook.username'],
-                    'password': app.settings['facebook.password'],
-                }
             }],
         })
 
@@ -110,7 +170,16 @@ def unban_facebook_blocked_members(app):
             'goto': urls['FORUM_BLOCKED_URL'],
             'expects': [
             {
+                'host': r'^www\.facebook\.com$',
+                'path': r'^%s?$' % urls['FORUM_BLOCKED_PATH'],
+                'selector_exists': '#pagelet_group_blocked',
                 'trigger': 'ufbm.unban',
+            },
+            {
+                'host': r'^www\.facebook\.com$',
+                'path': r'^%s?$' % urls['FORUM_BLOCKED_PATH'],
+                'custom': facebook404,
+                'trigger': 'core.page_not_found',
             }],
         })
 
